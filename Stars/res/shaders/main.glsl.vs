@@ -21,17 +21,6 @@ float rand(vec2 co){
 
 void main()
 {
-
-//    if(u_isSun && u_color.w < 0.9)
-//    {
-//        if(rand(in_position.xy * in_position.yz * in_position.xz) > 0.9)
-//        {
-//            float val = sin(u_time  * in_position.x * in_position.y * in_position.z);
-//            gl_Position =  vec4(in_position * val, 1.0);
-//        }
-//        else
-//            gl_Position =  vec4(0, 0, 0, 1.0);
-//    }
     if(u_isSun)
     {
         vertex.color = in_color + vec3(5, 5, 5);

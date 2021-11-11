@@ -17,10 +17,12 @@ public:
 private:
 	void Blur(unsigned int texture);
 
+
 	System* system;
 	Shader* shader;
 	Shader* compute;
 	Shader* threshold;
+	Shader* orbitShader;
 
 	Planet* orbitPlanet;
 	Player* player;

@@ -10,10 +10,8 @@ in vec3 normal;
 // uniform
 uniform vec3 u_viewPos;
 uniform vec4 u_color;
-//uniform vec2 u_Resolution;
 uniform bool u_isPlanet;
 uniform bool u_isSun;
-uniform bool u_hasRing;
 uniform float u_minHeight;
 uniform float u_maxHeight;
 
@@ -58,12 +56,13 @@ vec3 getPhong()
 	vec3 ambient = 0.025 * lightColor;
 	
 	// diffuse
-	float diffuseFactor = 0.5 * max(dot(normal, lightDir), 0.0);
+	float diffuseFactor = 0.8 * max(dot(normal, lightDir), 0.0);
 	vec3 diffuse = diffuseFactor * lightColor;
 
 	// specular
 	vec3 halfwayDir = normalize(lightDir + viewDir);  
 	vec3 specular = specStrength * pow(max(dot(normal, halfwayDir), 0.0), shininess) * lightColor;
-
+	if(diffuseFactor < 0)
+		specular = vec3(0, 0, 0);
 	return clamp(ambient + diffuse + specular, 0, 1.5);
 }

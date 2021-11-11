@@ -23,6 +23,9 @@ Renderer::Renderer(Window* window)
 	compute->LoadComputeShader("Compute", "res/shaders/bloom.glsl.cs");
 	threshold = new Shader;
 	threshold->LoadComputeShader("Threshold", "res/shaders/threshold.glsl.cs");
+	orbitShader = new Shader;
+	orbitShader->LoadShaders("orbitShader", "res/shaders/orbit.glsl.vs", "res/shaders/orbit.glsl.fs");
+
 
 	player = new Player(window);
 	player->camera->SetPosition({ 0, 0, -50 });
@@ -58,6 +61,7 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 		ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove|
 		ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground))
 	{
+		
 		ImGui::BeginMenuBar();
 		if (ImGui::BeginMenu("Scene"))
 		{
@@ -90,8 +94,11 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 			{
 				if (ImGui::DragFloat("Speed", &player->speed, 0.25f));
 				if (ImGui::DragFloat("Sensitivity", &player->sensitivity, 0.25f));
+				if (ImGui::DragFloat("Scroll Sensitivity", &player->scrollSensitivity, 0.025f));
 				ImGui::EndMenu();
 			}
+			if (ImGui::MenuItem("Draw Orbits", "", ImGuiWindow::Variable_bool("drawOrbits")));
+			if (ImGui::DragInt("Smooth Animation", &Global::maxFrames));
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Camera"))
@@ -100,12 +107,25 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 			{
 				if (*ImGuiWindow::Variable_bool("Freecam") == false)
 				{
-					*ImGuiWindow::Variable_int("Orbitcam") = 1;
+					*ImGuiWindow::Variable_int("Orbitcam") = 0;
+					*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
+					orbitPlanet = nullptr;
+					player->orbitPos = { 0, 0, 0 };
+					player->orbitDist = 50;
+					player->orbitSpeed = player->orbitDist / 50;
+					player->orbitMin = 0;
 				}
 				else
 				{
 					orbitPlanet = nullptr;
-					*ImGuiWindow::Variable_int("Orbitcam") = -1;			
+					*ImGuiWindow::Variable_int("Orbitcam") = -1;
+					glm::vec3 pos = glm::normalize(player->orbitPos - player->camera->GetPosition());
+					float y = -glm::degrees(atan2(pos.x, pos.z));
+					float p = glm::degrees(asin(pos.y));
+					y += 90;
+					if (y < 0)
+						y += 360;
+					player->camera->SetRotation(y, p);
 				}
 			}
 			if (ImGui::BeginMenu("Orbitcam"))
@@ -115,6 +135,7 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 				{
 					*ImGuiWindow::Variable_int("Orbitcam") = currentItemIndex;
 					*ImGuiWindow::Variable_bool("Freecam") = 0;
+					*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
 					orbitPlanet = nullptr;
 					player->orbitPos = { 0, 0, 0 };
 					player->orbitDist = 50;
@@ -130,6 +151,7 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 						{
 							*ImGuiWindow::Variable_int("Orbitcam") = currentItemIndex;
 							*ImGuiWindow::Variable_bool("Freecam") = 0;
+							*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
 							orbitPlanet = system->suns[suns];
 							player->orbitDist = orbitPlanet->size * 2;
 							player->orbitSpeed = player->orbitDist / 50;
@@ -148,6 +170,7 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 						{
 							*ImGuiWindow::Variable_int("Orbitcam") = currentItemIndex;
 							*ImGuiWindow::Variable_bool("Freecam") = 0;
+							*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
 							orbitPlanet = system->orbits[orbits]->planet;
 							player->orbitDist = orbitPlanet->size * 2;
 							player->orbitSpeed = player->orbitDist / 50;
@@ -159,6 +182,7 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 							{
 								*ImGuiWindow::Variable_int("Orbitcam") = currentItemIndex + moons + 1;
 								*ImGuiWindow::Variable_bool("Freecam") = 0;
+								*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
 								orbitPlanet = system->orbits[orbits]->moons[moons];
 								player->orbitDist = orbitPlanet->size * 2;
 								player->orbitSpeed = player->orbitDist / 50;
@@ -173,18 +197,36 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::Button("Creator"))
+		{ 
+			*ImGuiWindow::Variable_bool("ClosedCreator") = true;
+			*ImGuiWindow::Variable_bool("Creator") = true; 
+		}
 		ImGui::EndMenuBar();
 		ImGui::End();
 	}
+	if (*ImGuiWindow::Variable_bool("Creator") == true)
+	{
+		Planet* temp = system->Creator(player);
+		if (temp != nullptr)
+			orbitPlanet = temp;
+	}
 
+
+
+
+	system->Update();
 
 	// input
 	if(orbitPlanet != nullptr)
 		player->orbitPos = orbitPlanet->GetPos();
 	else
 		player->orbitPos = { 0, 0, 0 };
-	player->UpdateInput();
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	player->SmoothMove();
+
+	player->UpdateInput();
+
 	// drawing
 	glEnable(GL_DEPTH_TEST);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -192,13 +234,29 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 	shader->Use();
 	int width, height;
 	window->GetSize(&width, &height);
-	shader->setUniform2f("u_Resolution", width - 1, height - 1);
 	shader->setUniform3f("u_viewPos", player->camera->GetPosition().x, player->camera->GetPosition().y, player->camera->GetPosition().z);
 	shader->setUniformMatrix4fv("projection", glm::value_ptr(player->camera->GetProjMat()));
 	shader->setUniformMatrix4fv("view", glm::value_ptr(player->camera->GetViewMat()));
 	system->DrawSuns(shader);
 	system->Draw(shader);
-
+	if (*ImGuiWindow::Variable_bool("drawOrbits"))
+	{
+		glDisable(GL_CULL_FACE);
+		orbitShader->Use();
+		orbitShader->setUniform4f("u_color", 1, 1, 1, 1);
+		orbitShader->setUniformMatrix4fv("projection", glm::value_ptr(player->camera->GetProjMat()));
+		orbitShader->setUniformMatrix4fv("view", glm::value_ptr(player->camera->GetViewMat()));
+		
+		for (auto& it : system->orbits)
+		{
+			if(it->planet != nullptr)
+				it->planet->DrawOrbit(orbitShader);
+			for (auto& moons : it->moons)
+				moons->DrawOrbit(orbitShader);
+		}
+		glEnable(GL_CULL_FACE);
+		shader->Use();
+	}
 	Blur(fboTexture);
 	glDisable(GL_DEPTH_TEST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -214,6 +272,7 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 	fboDrawShader->setUniform1i("bloomTexture", 1);
 	fboDrawShader->setUniform1i("bloomLODs", Global::lod);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+
 
 }
 

@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <vector>
+#include "Player.h"
 class System
 {
 public:
@@ -13,26 +14,42 @@ public:
 
 	void Draw(Shader* shader);
 	void DrawSuns(Shader* shader);
-
+	void Update();
+	Planet* Creator(Player* player);
 private:
 	struct _orbit_
 	{
-		float dist;
-		float speed;
-		Planet* planet;
+		Planet* planet = nullptr;
 		std::vector<Planet*>moons;
-		void draw(Shader* shader)
+		void Update()
 		{
-			//if(playSpeed > 0)
-				planet->SetPos({ dist * cos(glm::radians(Global::time * speed)), 0, dist * sin(glm::radians(Global::time * speed)) });
-			planet->Draw(shader);
+			if (planet == nullptr)
+				return;
+			planet->modelOrbit = glm::translate(glm::mat4(1), { 0, 0, 0 });
+			planet->modelOrbit = glm::scale(planet->modelOrbit, glm::vec3(planet->dist, planet->dist, planet->dist));
+			planet->SetPos({ planet->dist * cos(glm::radians(planet->origin + Global::time * planet->speed)), 0,
+				planet->dist * sin(glm::radians(planet->origin + Global::time * planet->speed)) });
 			for (auto& it : moons)
 			{
-				glm::vec3 pos = planet->GetPos();
-				//if (playSpeed > 0)
-					it->SetPos(pos +  0.3f * glm::vec3{ cos(glm::radians(Global::time * 30)), 0.2f, sin(glm::radians(Global::time * 30)) });
-				it->Draw(shader);
+				it->modelOrbit = glm::translate(glm::mat4(1), planet->GetPos());
+				it->modelOrbit = glm::scale(it->modelOrbit, glm::vec3(it->dist, it->dist, it->dist));
+				it->SetPos(planet->GetPos() + it->dist * glm::vec3{ cos(glm::radians(it->origin + Global::time * it->speed)), 0,
+					sin(glm::radians(it->origin + Global::time * it->speed)) });
 			}
+		};
+		void draw(Shader* shader)
+		{
+			if (planet != nullptr)
+				planet->Draw(shader);
+			for (auto& it : moons)
+				it->Draw(shader);
+		};
+		~_orbit_()
+		{
+			if (planet != nullptr)
+				delete planet;
+			for (auto& it : moons)
+				delete it;
 		};
 	};
 public:

@@ -163,7 +163,6 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\System.cpp" />
-    <ClCompile Include="src\ThreadManager.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -190,7 +189,6 @@
     <ClInclude Include="src\Skybox.h" />
     <ClInclude Include="src\stb\stb_image.h" />
     <ClInclude Include="src\System.h" />
-    <ClInclude Include="src\ThreadManager.h" />
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
@@ -200,6 +198,8 @@
     <None Include="res\shaders\main.glsl.fs" />
     <None Include="res\shaders\main.glsl.gs" />
     <None Include="res\shaders\main.glsl.vs" />
+    <None Include="res\shaders\orbit.glsl.fs" />
+    <None Include="res\shaders\orbit.glsl.vs" />
     <None Include="res\shaders\skybox.glsl.fs" />
     <None Include="res\shaders\skybox.glsl.vs" />
     <None Include="res\shaders\threshold.glsl.cs" />

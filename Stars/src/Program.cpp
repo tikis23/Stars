@@ -127,18 +127,7 @@ void Program::loop()
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove
             | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground))
         {
-            ImGui::BeginMenuBar();
-            if (ImGui::BeginMenu("Scene"))
-            {
 
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Settings"))
-            {
-
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenuBar();
             ImGui::End();
         }
 

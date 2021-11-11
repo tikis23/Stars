@@ -8,6 +8,7 @@ in VertexData
     vec3 color;
 } vertex[];
 
+uniform bool isRing;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -25,20 +26,30 @@ void main()
 
 	v_color = vertex[0].color;
 	fragPos = (model * gl_in[0].gl_Position).xyz;
-	normal = vec3(vec4(normalMatrix * normalize(cross(gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz, gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz)), 0.0));
+	
+	if(isRing)
+		normal = normalize(vec3(vec4(normalMatrix * normalize(cross(gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz, gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz)), 0.0)));
+	else
+		normal = normalize(normalMatrix * gl_in[0].gl_Position.xyz);
 	gl_Position =  MVP * gl_in[0].gl_Position;
 	EmitVertex();
 
 	v_color = vertex[1].color;
 	fragPos = (model * gl_in[1].gl_Position).xyz;
-	normal = vec3(vec4(normalMatrix * normalize(cross(gl_in[2].gl_Position.xyz - gl_in[1].gl_Position.xyz, gl_in[0].gl_Position.xyz - gl_in[1].gl_Position.xyz)), 0.0));
+	if(isRing)
+		normal = normalize(vec3(vec4(normalMatrix * normalize(cross(gl_in[2].gl_Position.xyz - gl_in[1].gl_Position.xyz, gl_in[0].gl_Position.xyz - gl_in[1].gl_Position.xyz)), 0.0)));
+	else
+		normal = normalize(normalMatrix * gl_in[1].gl_Position.xyz);
 	gl_Position =  MVP * gl_in[1].gl_Position;
 	EmitVertex();
 
 
 	v_color = vertex[2].color;
 	fragPos = (model * gl_in[2].gl_Position).xyz;
-	normal = vec3(vec4(normalMatrix * normalize(cross(gl_in[0].gl_Position.xyz - gl_in[2].gl_Position.xyz, gl_in[1].gl_Position.xyz - gl_in[2].gl_Position.xyz)), 0.0));
+	if(isRing)
+		normal = normalize(vec3(vec4(normalMatrix * normalize(cross(gl_in[0].gl_Position.xyz - gl_in[2].gl_Position.xyz, gl_in[1].gl_Position.xyz - gl_in[2].gl_Position.xyz)), 0.0)));
+	else
+		normal = normalize(normalMatrix * gl_in[2].gl_Position.xyz);
 	gl_Position =  MVP * gl_in[2].gl_Position;
 	EmitVertex();
 		

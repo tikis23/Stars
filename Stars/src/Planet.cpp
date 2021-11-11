@@ -2,10 +2,11 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 #include <thread>
-
-Planet::Planet(float i_size, float i_mult, glm::vec3 i_color, glm::vec3 i_planetRot, glm::vec3 i_atmoRot, int i_type, glm::vec3 i_ringColor, bool i_hasRing)
+Planet::Planet(float i_size, int i_detail, float i_mult, glm::vec3 i_color, glm::vec3 i_planetRot, glm::vec3 i_atmoRot, int i_type, glm::vec3 i_ringColor, bool i_hasRing)
 {
     this->hasRing = i_hasRing;
+    if(i_detail > 0)
+        this->detail = i_detail;
     this->mult = i_mult;
     if (i_mult < 0)
         mult = 1000;
@@ -13,35 +14,74 @@ Planet::Planet(float i_size, float i_mult, glm::vec3 i_color, glm::vec3 i_planet
     this->planetRot = i_planetRot;
     this->atmoRot   = i_atmoRot;
 
-    if(i_type == 0)
+    if (i_type == 0)
+    {
         this->isSun = true;
+        detail = 5;
+    }
     if (i_type == 1)
         this->isPlanet = true;
     if (i_type == 2)
         this->isGas = true;
     if (i_type == 3)
         this->isMoon = true;
+    this->atmoSize = 3;
 
-    if(isSun)
-        this->atmoSize = i_size * 0.85f;
-    if (hasRing)
-        this->atmoSize = 3;
-
+    if (isMoon)
+    {
+        dist = 0.3f;
+        speed = 30;
+        origin = 0;
+    }
     this->color = glm::vec4(i_color, 1.0f);
-    this->colorAtmo = glm::vec4(i_color, 0.8f);
     this->colorRing = glm::vec4(i_ringColor, 0.95f);
-    drawData.emplace_back(new _drawData_);
     drawData.emplace_back(new _drawData_);
     drawData.emplace_back(new _drawData_);
 
     std::thread(&Planet::Generate, this).detach();
+
+    GenOrbitData();
+}
+
+Planet::Planet()
+{
+    this->hasRing = false;
+    this->mult = 1000;
+    this->size = 1;
+    this->planetRot = { 1, 0, 0 };
+    this->atmoRot = { 1, 0, 0 };
+
+    this->isSun = false;
+    this->isPlanet = false;
+    this->isGas = false;
+    this->isMoon = false;
+    this->atmoSize = 3;
+    this->speed = 1;
+
+    this->color = glm::vec4(0.1, 0.4, 0.5, 1.0f);
+    this->colorRing = glm::vec4(0.1, 0.4, 0.5, 0.95f);
+    drawData.emplace_back(new _drawData_);
+    drawData.emplace_back(new _drawData_);
+
+    std::thread(&Planet::Generate, this).detach();
+    GenOrbitData();
 }
 
 Planet::~Planet()
 {
     delete drawData[0];
     delete drawData[1];
-    delete drawData[2];
+}
+
+void Planet::Regenerate()
+{
+    delete drawData[0];
+    delete drawData[1];
+    drawData.clear();
+    drawData.emplace_back(new _drawData_);
+    drawData.emplace_back(new _drawData_);
+
+    std::thread(&Planet::Generate, this).detach();
 }
 
 void Planet::Generate()
@@ -96,30 +136,53 @@ void Planet::Generate()
                 glm::vec3 pos4 = { sinf(glm::radians(j + 3)) / (r + ringDensity), 0, cosf(glm::radians(j + 3)) / (r + ringDensity) };
 
                 // top
-                drawData[2]->data.push_back({ pos1, rand1 });
-                drawData[2]->data.push_back({ pos2, rand1 });
-                drawData[2]->data.push_back({ pos3, rand2 });
-
-                drawData[2]->data.push_back({ pos2, rand1 });
-                drawData[2]->data.push_back({ pos4, rand2 });
-                drawData[2]->data.push_back({ pos3, rand2 });
-
-                // bottom                     
-                drawData[2]->data.push_back({ pos2, rand1 });
-                drawData[2]->data.push_back({ pos1, rand1 });
-                drawData[2]->data.push_back({ pos3, rand2 });
-
-                drawData[2]->data.push_back({ pos4, rand2 });
-                drawData[2]->data.push_back({ pos2, rand1 });
-                drawData[2]->data.push_back({ pos3, rand2 });
+                drawData[1]->data.push_back({ pos1, rand1 });
+                drawData[1]->data.push_back({ pos2, rand1 });
+                drawData[1]->data.push_back({ pos3, rand2 });
+                         
+                drawData[1]->data.push_back({ pos2, rand1 });
+                drawData[1]->data.push_back({ pos4, rand2 });
+                drawData[1]->data.push_back({ pos3, rand2 });
+                         
+                // bottom                   
+                drawData[1]->data.push_back({ pos2, rand1 });
+                drawData[1]->data.push_back({ pos1, rand1 });
+                drawData[1]->data.push_back({ pos3, rand2 });
+                         
+                drawData[1]->data.push_back({ pos4, rand2 });
+                drawData[1]->data.push_back({ pos2, rand1 });
+                drawData[1]->data.push_back({ pos3, rand2 });
             }
         }
     }
     generated = true;
 }
 
+void Planet::GenOrbitData()
+{
+    if (orbitData == nullptr)
+        orbitData = new _drawData_;
+    if (orbitData->drawSize == 0)
+    {
+        orbitData->bind();
+        for (int i = 0; i < 360; i += 1)
+        {
+            orbitData->data.push_back({ {cos(glm::radians((float)i)), 0, sin(glm::radians((float)i))}, {1, 1, 1} });
+            orbitData->data.push_back({ {cos(glm::radians((float)i + 1)), 0, sin(glm::radians((float)i + 1))}, {1, 1, 1} });
+        }
+        glBufferData(GL_ARRAY_BUFFER, orbitData->data.size() * sizeof(Vertex), &orbitData->data[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        orbitData->drawSize = orbitData->data.size();
+        //orbitData->data.clear();
+    }
+}
+
 void Planet::Draw(Shader* shader)
 {
+    shader->Use();
     if (generated)
     {
         drawData[0]->bind();
@@ -128,14 +191,18 @@ void Planet::Draw(Shader* shader)
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
+        drawData[0]->drawSize = drawData[0]->data.size();
+        drawData[0]->data.clear();
         if (hasRing)
         {
-            drawData[2]->bind();
-            glBufferData(GL_ARRAY_BUFFER, drawData[2]->data.size() * sizeof(Vertex), &drawData[2]->data[0], GL_STATIC_DRAW);
+            drawData[1]->bind();
+            glBufferData(GL_ARRAY_BUFFER, drawData[1]->data.size() * sizeof(Vertex), &drawData[1]->data[0], GL_STATIC_DRAW);
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
             glEnableVertexAttribArray(0);
             glEnableVertexAttribArray(1);
+            drawData[1]->drawSize = drawData[1]->data.size();
+            drawData[1]->data.clear();
         }
         generated = false;
     }
@@ -145,24 +212,36 @@ void Planet::Draw(Shader* shader)
 
     modelAtmo = glm::translate(glm::mat4(1), pos);
     modelAtmo = glm::scale(modelAtmo, glm::vec3(atmoSize, atmoSize, atmoSize));
-    modelAtmo = glm::rotate(modelAtmo, glm::radians(Global::time * 1), atmoRot);
+    modelAtmo = glm::rotate(modelAtmo, glm::radians(Global::time), atmoRot);
 
     shader->setUniform1f("u_time", glfwGetTime());
     shader->setUniform1f("u_minHeight", min_height);
     shader->setUniform1f("u_maxHeight", max_height);
     shader->setUniform1i("u_hasRing", hasRing);
     shader->setUniform1i("u_isSun", isSun);
+    shader->setUniform1i("isRing", false);
     shader->setUniform1i("u_isPlanet", isPlanet);
     shader->setUniform4f("u_color", color.x, color.y, color.z, color.w);
     shader->setUniformMatrix4fv("model", glm::value_ptr(model));
     drawData[0]->draw();
     if (hasRing)
     {
+        shader->setUniform1i("isRing", true);
         shader->setUniform1i("u_isPlanet", false);
         shader->setUniform4f("u_color", colorRing.x, colorRing.y, colorRing.z, colorRing.w);
         shader->setUniformMatrix4fv("model", glm::value_ptr(modelAtmo));
-        drawData[2]->draw();
-    } 
+        drawData[1]->draw();
+    }
+}
+
+void Planet::DrawOrbit(Shader* shader)
+{
+    orbitData->bind();
+    if (orbitData->drawSize == 0)
+        return;
+    shader->setUniformMatrix4fv("model", glm::value_ptr(modelOrbit));
+    glBindVertexArray(orbitData->VAO);
+    glDrawArrays(GL_LINES, 0, orbitData->drawSize);
 }
 
 void Planet::SetPos(glm::vec3 pos)
@@ -223,3 +302,5 @@ void Planet::subdivide(glm::vec3 pos1, glm::vec3 pos2, glm::vec3 pos3, int detai
         subdivide((pos2 + pos1) * 0.5f, (pos3 + pos2) * 0.5f, (pos3 + pos1) * 0.5f, detail - 1, data);
     }
 }
+
+Planet::_drawData_* Planet::orbitData;

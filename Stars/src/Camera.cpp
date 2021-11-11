@@ -66,7 +66,7 @@ void Camera::SetRotation(float yaw, float pitch)
 void Camera::SetRotation(glm::vec3 front)
 {
     float p = glm::degrees(asin(front.y));
-    float y = glm::degrees(acos(front.x / cos(glm::radians(p))));
+    float y = glm::degrees(atan2(front.x, front.z));
     SetRotation(y, p);
 }
 
@@ -91,7 +91,7 @@ void Camera::OffsetRotation(float yaw, float pitch)
 void Camera::OffsetRotation(glm::vec3 front)
 {
     float p = glm::degrees(asin(front.y));
-    float y = glm::degrees(acos(front.x / cos(glm::radians(p))));
+    float y = glm::degrees(atan2(front.x, front.z));
     OffsetRotation(y, p);
 }
 
