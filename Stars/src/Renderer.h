@@ -13,7 +13,7 @@ public:
 	Renderer(Window* window);
 	~Renderer();
 	void Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao, unsigned int fboTexture);
-
+	void UpdateFBO();
 private:
 	void Blur(unsigned int texture);
 

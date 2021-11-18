@@ -4,37 +4,36 @@
 #include <thread>
 Planet::Planet(float i_size, int i_detail, float i_mult, glm::vec3 i_color, glm::vec3 i_planetRot, glm::vec3 i_atmoRot, int i_type, glm::vec3 i_ringColor, bool i_hasRing)
 {
-    this->hasRing = i_hasRing;
+    variables.hasRing = i_hasRing;
     if(i_detail > 0)
-        this->detail = i_detail;
-    this->mult = i_mult;
+        variables.detail = i_detail;
+    variables.mult = i_mult;
     if (i_mult < 0)
-        mult = 1000;
-    this->size = i_size;
-    this->planetRot = i_planetRot;
-    this->atmoRot   = i_atmoRot;
+        variables.mult = 1000;
+    variables.size = i_size;
+    variables.planetRot = i_planetRot;
+    variables.ringRot   = i_atmoRot;
 
     if (i_type == 0)
     {
-        this->isSun = true;
-        detail = 5;
+        variables.isSun = true;
+        variables.detail = 5;
     }
     if (i_type == 1)
-        this->isPlanet = true;
+        variables.isPlanet = true;
     if (i_type == 2)
-        this->isGas = true;
+        variables.isGas = true;
     if (i_type == 3)
-        this->isMoon = true;
-    this->atmoSize = 3;
+        variables.isMoon = true;
 
-    if (isMoon)
+    if (variables.isMoon)
     {
-        dist = 0.3f;
-        speed = 30;
-        origin = 0;
+        variables.dist = 0.3f;
+        variables.speed = 30;
+        variables.origin = 0;
     }
-    this->color = glm::vec4(i_color, 1.0f);
-    this->colorRing = glm::vec4(i_ringColor, 0.95f);
+    variables.color = glm::vec4(i_color, 1.0f);
+    variables.colorRing = glm::vec4(i_ringColor, 0.95f);
     drawData.emplace_back(new _drawData_);
     drawData.emplace_back(new _drawData_);
 
@@ -43,23 +42,18 @@ Planet::Planet(float i_size, int i_detail, float i_mult, glm::vec3 i_color, glm:
     GenOrbitData();
 }
 
+Planet::Planet(PlanetVariables variables)
+{
+    this->variables = variables;
+    drawData.emplace_back(new _drawData_);
+    drawData.emplace_back(new _drawData_);
+
+    std::thread(&Planet::Generate, this).detach();
+    GenOrbitData();
+}
+
 Planet::Planet()
 {
-    this->hasRing = false;
-    this->mult = 1000;
-    this->size = 1;
-    this->planetRot = { 1, 0, 0 };
-    this->atmoRot = { 1, 0, 0 };
-
-    this->isSun = false;
-    this->isPlanet = false;
-    this->isGas = false;
-    this->isMoon = false;
-    this->atmoSize = 3;
-    this->speed = 1;
-
-    this->color = glm::vec4(0.1, 0.4, 0.5, 1.0f);
-    this->colorRing = glm::vec4(0.1, 0.4, 0.5, 0.95f);
     drawData.emplace_back(new _drawData_);
     drawData.emplace_back(new _drawData_);
 
@@ -112,13 +106,13 @@ void Planet::Generate()
         p4.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
         p4 = glm::normalize(p4);
 
-        subdivide(glm::vec3{ 0, 0, 0 } + glm::vec3{ 0, 1, 0 }, glm::vec3{ 0, 0, 0 } + p1, glm::vec3{ 0, 0, 0 } + p2, detail, drawData[0]->data);
-        subdivide(glm::vec3{ 0, 0, 0 } + p2, glm::vec3{ 0, 0, 0 } + p1, glm::vec3{ 0, 0, 0 } + p4, detail, drawData[0]->data);
-        subdivide(glm::vec3{ 0, 0, 0 } + glm::vec3{ 0, -1, 0 }, glm::vec3{ 0, 0, 0 } + p4, glm::vec3{ 0, 0, 0 } + p3, detail, drawData[0]->data);
-        subdivide(glm::vec3{ 0, 0, 0 } + p3, glm::vec3{ 0, 0, 0 } + p4, glm::vec3{ 0, 0, 0 } + p1, detail, drawData[0]->data);
+        subdivide(glm::vec3{ 0, 0, 0 } + glm::vec3{ 0, 1, 0 }, glm::vec3{ 0, 0, 0 } + p1, glm::vec3{ 0, 0, 0 } + p2, variables.detail, drawData[0]->data);
+        subdivide(glm::vec3{ 0, 0, 0 } + p2, glm::vec3{ 0, 0, 0 } + p1, glm::vec3{ 0, 0, 0 } + p4, variables.detail, drawData[0]->data);
+        subdivide(glm::vec3{ 0, 0, 0 } + glm::vec3{ 0, -1, 0 }, glm::vec3{ 0, 0, 0 } + p4, glm::vec3{ 0, 0, 0 } + p3, variables.detail, drawData[0]->data);
+        subdivide(glm::vec3{ 0, 0, 0 } + p3, glm::vec3{ 0, 0, 0 } + p4, glm::vec3{ 0, 0, 0 } + p1, variables.detail, drawData[0]->data);
     }
     // ring
-    if (hasRing)
+    if (variables.hasRing)
     {
         float ringDetail = 5000;
         float ringDensity = 0.001f;
@@ -176,7 +170,7 @@ void Planet::GenOrbitData()
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
         orbitData->drawSize = orbitData->data.size();
-        //orbitData->data.clear();
+        orbitData->data.clear();
     }
 }
 
@@ -193,7 +187,7 @@ void Planet::Draw(Shader* shader)
         glEnableVertexAttribArray(1);
         drawData[0]->drawSize = drawData[0]->data.size();
         drawData[0]->data.clear();
-        if (hasRing)
+        if (variables.hasRing)
         {
             drawData[1]->bind();
             glBufferData(GL_ARRAY_BUFFER, drawData[1]->data.size() * sizeof(Vertex), &drawData[1]->data[0], GL_STATIC_DRAW);
@@ -207,28 +201,28 @@ void Planet::Draw(Shader* shader)
         generated = false;
     }
     model = glm::translate(glm::mat4(1), pos);
-    model = glm::scale(model, glm::vec3(size, size, size));
-    model = glm::rotate(model, glm::radians(Global::time * 3), planetRot);
+    model = glm::scale(model, glm::vec3(variables.size, variables.size, variables.size));
+    model = glm::rotate(model, glm::radians(Global::time * 3), variables.planetRot);
 
     modelAtmo = glm::translate(glm::mat4(1), pos);
-    modelAtmo = glm::scale(modelAtmo, glm::vec3(atmoSize, atmoSize, atmoSize));
-    modelAtmo = glm::rotate(modelAtmo, glm::radians(Global::time), atmoRot);
+    modelAtmo = glm::scale(modelAtmo, glm::vec3(variables.ringSize, variables.ringSize, variables.ringSize));
+    modelAtmo = glm::rotate(modelAtmo, glm::radians(Global::time), variables.ringRot);
 
     shader->setUniform1f("u_time", glfwGetTime());
-    shader->setUniform1f("u_minHeight", min_height);
-    shader->setUniform1f("u_maxHeight", max_height);
-    shader->setUniform1i("u_hasRing", hasRing);
-    shader->setUniform1i("u_isSun", isSun);
+    shader->setUniform1f("u_minHeight", variables.min_height);
+    shader->setUniform1f("u_maxHeight", variables.max_height);
+    shader->setUniform1i("u_hasRing", variables.hasRing);
+    shader->setUniform1i("u_isSun", variables.isSun);
     shader->setUniform1i("isRing", false);
-    shader->setUniform1i("u_isPlanet", isPlanet);
-    shader->setUniform4f("u_color", color.x, color.y, color.z, color.w);
+    shader->setUniform1i("u_isPlanet", variables.isPlanet);
+    shader->setUniform4f("u_color", variables.color.x, variables.color.y, variables.color.z, variables.color.w);
     shader->setUniformMatrix4fv("model", glm::value_ptr(model));
     drawData[0]->draw();
-    if (hasRing)
+    if (variables.hasRing)
     {
         shader->setUniform1i("isRing", true);
         shader->setUniform1i("u_isPlanet", false);
-        shader->setUniform4f("u_color", colorRing.x, colorRing.y, colorRing.z, colorRing.w);
+        shader->setUniform4f("u_color", variables.colorRing.x, variables.colorRing.y, variables.colorRing.z, variables.colorRing.w);
         shader->setUniformMatrix4fv("model", glm::value_ptr(modelAtmo));
         drawData[1]->draw();
     }
@@ -251,7 +245,7 @@ void Planet::SetPos(glm::vec3 pos)
 
 glm::vec3 Planet::GetPos()
 {
-    return this->pos;
+    return pos;
 }
 
 void Planet::subdivide(glm::vec3 pos1, glm::vec3 pos2, glm::vec3 pos3, int detail, std::vector<Vertex>& data)
@@ -261,27 +255,27 @@ void Planet::subdivide(glm::vec3 pos1, glm::vec3 pos2, glm::vec3 pos3, int detai
         pos1 = glm::normalize(pos1);
         pos2 = glm::normalize(pos2);
         pos3 = glm::normalize(pos3);
-        if (isSun)
+        if (variables.isSun)
         {
-            data.push_back(Vertex{ pos1,glm::vec3{1, 1, 1} *((noise.GetNoise(pos1.x * mult, pos1.y * mult, pos1.z * mult) + 1) / 2 + 0.3f) });
-            data.push_back(Vertex{ pos2,glm::vec3{1, 1, 1} *((noise.GetNoise(pos2.x * mult, pos2.y * mult, pos2.z * mult) + 1) / 2 + 0.3f) });
-            data.push_back(Vertex{ pos3,glm::vec3{1, 1, 1} *((noise.GetNoise(pos3.x * mult, pos3.y * mult, pos3.z * mult) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos1,glm::vec3{1, 1, 1} *((noise.GetNoise(pos1.x * variables.mult, pos1.y * variables.mult, pos1.z * variables.mult) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos2,glm::vec3{1, 1, 1} *((noise.GetNoise(pos2.x * variables.mult, pos2.y * variables.mult, pos2.z * variables.mult) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos3,glm::vec3{1, 1, 1} *((noise.GetNoise(pos3.x * variables.mult, pos3.y * variables.mult, pos3.z * variables.mult) + 1) / 2 + 0.3f) });
         }                               
-        else if (isGas)
+        else if (variables.isGas)
         {
-            data.push_back(Vertex{ pos1, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos1.x , pos1.y * mult, pos1.z) + 1) / 2 + 0.3f) });
-            data.push_back(Vertex{ pos2, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos2.x , pos2.y * mult, pos2.z) + 1) / 2 + 0.3f) });
-            data.push_back(Vertex{ pos3, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos3.x , pos3.y * mult, pos3.z) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos1, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos1.x , pos1.y * variables.mult, pos1.z) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos2, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos2.x , pos2.y * variables.mult, pos2.z) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos3, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos3.x , pos3.y * variables.mult, pos3.z) + 1) / 2 + 0.3f) });
         }
-        else if (isMoon)
+        else if (variables.isMoon)
         {
             noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
             noise.SetFrequency(0.001f);
             noise.SetFractalType(FastNoiseLite::FractalType_PingPong);
 
-            data.push_back(Vertex{ pos1, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos1.x * mult, pos1.y * mult, pos1.z * mult) + 1) / 2 + 0.3f) });
-            data.push_back(Vertex{ pos2, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos2.x * mult, pos2.y * mult, pos2.z * mult) + 1) / 2 + 0.3f) });
-            data.push_back(Vertex{ pos3, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos3.x * mult, pos3.y * mult, pos3.z * mult) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos1, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos1.x * variables.mult, pos1.y * variables.mult, pos1.z * variables.mult) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos2, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos2.x * variables.mult, pos2.y * variables.mult, pos2.z * variables.mult) + 1) / 2 + 0.3f) });
+            data.push_back(Vertex{ pos3, glm::vec3{1, 1, 1} * ((noise.GetNoise(pos3.x * variables.mult, pos3.y * variables.mult, pos3.z * variables.mult) + 1) / 2 + 0.3f) });
         }
         else
         {
@@ -289,9 +283,9 @@ void Planet::subdivide(glm::vec3 pos1, glm::vec3 pos2, glm::vec3 pos3, int detai
             noise.SetFractalWeightedStrength(1.5f);
             noise.SetFrequency(0.005f);
 
-            data.push_back(Vertex{ pos1, glm::vec3{1, 1, 1} *((noise.GetNoise(pos1.x * mult, pos1.y * mult, pos1.z * mult) + 1) / 2 ) });
-            data.push_back(Vertex{ pos2, glm::vec3{1, 1, 1} *((noise.GetNoise(pos2.x * mult, pos2.y * mult, pos2.z * mult) + 1) / 2 ) });
-            data.push_back(Vertex{ pos3, glm::vec3{1, 1, 1} *((noise.GetNoise(pos3.x * mult, pos3.y * mult, pos3.z * mult) + 1) / 2 ) });
+            data.push_back(Vertex{ pos1, glm::vec3{1, 1, 1} *((noise.GetNoise(pos1.x * variables.mult, pos1.y * variables.mult, pos1.z * variables.mult) + 1) / 2 ) });
+            data.push_back(Vertex{ pos2, glm::vec3{1, 1, 1} *((noise.GetNoise(pos2.x * variables.mult, pos2.y * variables.mult, pos2.z * variables.mult) + 1) / 2 ) });
+            data.push_back(Vertex{ pos3, glm::vec3{1, 1, 1} *((noise.GetNoise(pos3.x * variables.mult, pos3.y * variables.mult, pos3.z * variables.mult) + 1) / 2 ) });
         }
     }
     else

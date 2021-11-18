@@ -22,9 +22,11 @@ public:
 	static bool* Variable_bool(std::string name);
 	static int* Variable_int(std::string name);
 	static float* Variable_float(std::string name);
+	static std::string* Variable_string(std::string name);
 private:
 	static std::unordered_map<std::string, bool> boolVariables;
 	static std::unordered_map<std::string, int> intVariables;
 	static std::unordered_map<std::string, float> floatVariables;
+	static std::unordered_map<std::string, std::string> stringVariables;
 	//ImGuiWindow();
 };

@@ -16,7 +16,7 @@ public:
 	void DrawSuns(Shader* shader);
 	void Update();
 	Planet* Creator(Player* player);
-private:
+
 	struct _orbit_
 	{
 		Planet* planet = nullptr;
@@ -26,15 +26,15 @@ private:
 			if (planet == nullptr)
 				return;
 			planet->modelOrbit = glm::translate(glm::mat4(1), { 0, 0, 0 });
-			planet->modelOrbit = glm::scale(planet->modelOrbit, glm::vec3(planet->dist, planet->dist, planet->dist));
-			planet->SetPos({ planet->dist * cos(glm::radians(planet->origin + Global::time * planet->speed)), 0,
-				planet->dist * sin(glm::radians(planet->origin + Global::time * planet->speed)) });
+			planet->modelOrbit = glm::scale(planet->modelOrbit, glm::vec3(planet->variables.dist, planet->variables.dist, planet->variables.dist));
+			planet->SetPos({ planet->variables.dist * cos(glm::radians(planet->variables.origin + Global::time * planet->variables.speed)), 0,
+				planet->variables.dist * sin(glm::radians(planet->variables.origin + Global::time * planet->variables.speed)) });
 			for (auto& it : moons)
 			{
 				it->modelOrbit = glm::translate(glm::mat4(1), planet->GetPos());
-				it->modelOrbit = glm::scale(it->modelOrbit, glm::vec3(it->dist, it->dist, it->dist));
-				it->SetPos(planet->GetPos() + it->dist * glm::vec3{ cos(glm::radians(it->origin + Global::time * it->speed)), 0,
-					sin(glm::radians(it->origin + Global::time * it->speed)) });
+				it->modelOrbit = glm::scale(it->modelOrbit, glm::vec3(it->variables.dist, it->variables.dist, it->variables.dist));
+				it->SetPos(planet->GetPos() + it->variables.dist * glm::vec3{ cos(glm::radians(it->variables.origin + Global::time * it->variables.speed)), 0,
+					sin(glm::radians(it->variables.origin + Global::time * it->variables.speed)) });
 			}
 		};
 		void draw(Shader* shader)

@@ -6,6 +6,7 @@ void ImGuiWindow::Setup(Window* window)
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(window->GetHandle(), true);
 	ImGui_ImplOpenGL3_Init("#version 330");
+	ImGui::GetIO().IniFilename = NULL;
 }
 
 void ImGuiWindow::Destroy()
@@ -43,6 +44,12 @@ float *ImGuiWindow::Variable_float(std::string name)
 	return &floatVariables[name];
 }
 
+std::string* ImGuiWindow::Variable_string(std::string name)
+{
+	return &stringVariables[name];
+}
+
 std::unordered_map<std::string, bool> ImGuiWindow::boolVariables;
 std::unordered_map<std::string, int> ImGuiWindow::intVariables;
 std::unordered_map<std::string, float> ImGuiWindow::floatVariables;
+std::unordered_map<std::string, std::string> ImGuiWindow::stringVariables;

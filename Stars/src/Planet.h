@@ -8,7 +8,27 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "GlobalVariables.h"
-
+struct PlanetVariables
+{
+	int detail = 4;
+	bool isSun = false;
+	bool isPlanet = false;
+	bool isGas = false;
+	bool isMoon = false;
+	bool hasRing = false;
+	float max_height = 1;
+	float min_height = 0;
+	float size = 1;
+	float mult = 1000;
+	float origin = 0;
+	float dist = 0;
+	float speed = 1;
+	float ringSize = 3;
+	glm::vec3 planetRot = { 1, 0, 0 };
+	glm::vec3 ringRot = { 1, 0, 0 };
+	glm::vec4 color = { 0.0f, 1.0f, 0.5f, 1.0f };
+	glm::vec4 colorRing = { 1.0f, 0.5f, 0.8f, 0.95f };
+};
 struct Vertex
 {
 	glm::vec3 position;
@@ -18,6 +38,7 @@ class Planet
 {
 public:
 	Planet(float i_size, int i_detail, float i_mult, glm::vec3 i_color, glm::vec3 i_planetRot, glm::vec3 i_atmoRot, int i_type, glm::vec3 i_ringColor = {}, bool i_hasRing = false);
+	Planet(PlanetVariables variables);
 	Planet();
 	~Planet();
 	void Draw(Shader* shader);
@@ -27,25 +48,7 @@ public:
 	void Regenerate();
 public:
 	glm::mat4 modelOrbit = glm::mat4(1.0f);
-
-	float max_height = 1;
-	float min_height = 0;
-	float size;
-	glm::vec3 planetRot;
-	glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	bool isSun = false;
-	bool isPlanet = false;
-	bool isGas = false;
-	bool isMoon = false;
-	bool hasRing = false;
-	glm::vec3 atmoRot;
-	glm::vec4 colorRing = { 1.0f, 0.8f, 0.0f, 0.8f };
-	int detail = 4;
-	float mult;
-	float origin;
-	float dist;
-	float speed;
-	float atmoSize;
+	PlanetVariables variables;
 private:
 	struct _drawData_
 	{
@@ -84,7 +87,6 @@ private:
 
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 modelAtmo = glm::mat4(1.0f);
-
 
 	bool generated = false;
 

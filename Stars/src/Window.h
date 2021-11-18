@@ -16,12 +16,14 @@ public:
 	void MakeCurrent();
 	void SetVSync(int mode);
 	void Update();
+	void ChangeMode(int mode);
 public:
 	GLFWwindow* GetHandle() const { return handle; };
 	void GetSize(int* width, int* height) const { glfwGetFramebufferSize(handle, width, height); };
 	float GetAspectRatio()const { int width; int height; glfwGetFramebufferSize(handle, &width, &height); if (height != 0)return (float)width / height; else return 0; };
 	bool IsInFocus()const { return glfwGetWindowAttrib(handle, GLFW_FOCUSED); };
 	void ChangeTitle();
+	static bool updated;
 private:
 	static void Framebuffer_callback(GLFWwindow* window, int width, int height);
 
@@ -29,4 +31,6 @@ private:
 	GLFWwindow* handle; 
 	std::string title;
 	float fps, lastUpdate;
+	int widthOriginal, heightOriginal;
+	int posXOriginal, posYOriginal;
 };

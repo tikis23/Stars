@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "ImGuiWindow.h"
+#include "SaveManager.h"
 
 bool Checkmark(int num1, int num2)
 {
@@ -44,7 +45,7 @@ Renderer::Renderer(Window* window)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, Global::lod);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, *ImGuiWindow::Variable_int("LOD"));
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
@@ -57,25 +58,10 @@ Renderer::~Renderer()
 void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao, unsigned int fboTexture)
 {
 	// IMGUI
-	if (ImGui::Begin("Main", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_MenuBar |
-		ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove|
-		ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground))
+	if (ImGui::Begin("Main"))
 	{
-		
 		ImGui::BeginMenuBar();
-		if (ImGui::BeginMenu("Scene"))
-		{
-			if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
-			if (ImGui::BeginMenu("New..", "Ctrl+N")) 
-			{
-				if (ImGui::MenuItem("Generated")) { delete system; system = new System{ false }; }
-				if (ImGui::MenuItem("Empty")) { delete system; system = new System{ false }; }
-				if (ImGui::MenuItem("Home")) { delete system; system = new System{ true }; }
-				ImGui::EndMenu();
-			}
-			if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Do stuff */ }
-			ImGui::EndMenu();
-		}
+		SaveManager::Menu(&system);
 		if (ImGui::BeginMenu("Settings"))
 		{
 			if (ImGui::BeginMenu("Time Speed"))
@@ -95,10 +81,13 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 				if (ImGui::DragFloat("Speed", &player->speed, 0.25f));
 				if (ImGui::DragFloat("Sensitivity", &player->sensitivity, 0.25f));
 				if (ImGui::DragFloat("Scroll Sensitivity", &player->scrollSensitivity, 0.025f));
+				if (ImGui::DragInt("Smooth Animation", &Global::maxFrames));
 				ImGui::EndMenu();
 			}
 			if (ImGui::MenuItem("Draw Orbits", "", ImGuiWindow::Variable_bool("drawOrbits")));
-			if (ImGui::DragInt("Smooth Animation", &Global::maxFrames));
+			if (ImGui::MenuItem("Fullscreen", "", ImGuiWindow::Variable_bool("Fullscreen")))
+				window->ChangeMode(*ImGuiWindow::Variable_bool("Fullscreen"));
+			if (ImGui::MenuItem("Vsync", "", ImGuiWindow::Variable_bool("Vsync")));
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Camera"))
@@ -153,9 +142,9 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 							*ImGuiWindow::Variable_bool("Freecam") = 0;
 							*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
 							orbitPlanet = system->suns[suns];
-							player->orbitDist = orbitPlanet->size * 2;
+							player->orbitDist = orbitPlanet->variables.size * 2;
 							player->orbitSpeed = player->orbitDist / 50;
-							player->orbitMin = orbitPlanet->size * 1.1f;
+							player->orbitMin = orbitPlanet->variables.size * 1.1f;
 						}
 						currentItemIndex++;
 					}
@@ -172,9 +161,9 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 							*ImGuiWindow::Variable_bool("Freecam") = 0;
 							*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
 							orbitPlanet = system->orbits[orbits]->planet;
-							player->orbitDist = orbitPlanet->size * 2;
+							player->orbitDist = orbitPlanet->variables.size * 2;
 							player->orbitSpeed = player->orbitDist / 50;
-							player->orbitMin = orbitPlanet->size * 1.1f;
+							player->orbitMin = orbitPlanet->variables.size * 1.1f;
 						}
 						for (int moons = 0; moons < system->orbits[orbits]->moons.size(); moons++)
 						{
@@ -184,9 +173,9 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 								*ImGuiWindow::Variable_bool("Freecam") = 0;
 								*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
 								orbitPlanet = system->orbits[orbits]->moons[moons];
-								player->orbitDist = orbitPlanet->size * 2;
+								player->orbitDist = orbitPlanet->variables.size * 2;
 								player->orbitSpeed = player->orbitDist / 50;
-								player->orbitMin = orbitPlanet->size * 1.1f;
+								player->orbitMin = orbitPlanet->variables.size * 1.1f;
 							}
 						}
 						ImGui::EndMenu();
@@ -211,10 +200,6 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 		if (temp != nullptr)
 			orbitPlanet = temp;
 	}
-
-
-
-
 	system->Update();
 
 	// input
@@ -232,8 +217,6 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	shader->Use();
-	int width, height;
-	window->GetSize(&width, &height);
 	shader->setUniform3f("u_viewPos", player->camera->GetPosition().x, player->camera->GetPosition().y, player->camera->GetPosition().z);
 	shader->setUniformMatrix4fv("projection", glm::value_ptr(player->camera->GetProjMat()));
 	shader->setUniformMatrix4fv("view", glm::value_ptr(player->camera->GetViewMat()));
@@ -272,8 +255,24 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 	fboDrawShader->setUniform1i("bloomTexture", 1);
 	fboDrawShader->setUniform1i("bloomLODs", Global::lod);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+}
 
-
+void Renderer::UpdateFBO()
+{
+	glDeleteTextures(1, &output);
+	int width, height;
+	window->GetSize(&width, &height);
+	glGenTextures(1, &output);
+	glBindTexture(GL_TEXTURE_2D, output);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, *ImGuiWindow::Variable_int("LOD"));
+	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 void Renderer::Blur(unsigned int texture)
