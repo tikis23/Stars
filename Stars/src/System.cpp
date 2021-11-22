@@ -3,32 +3,26 @@
 
 #include "ImGuiWindow.h"
 
-
-struct _star_
-{
-	float radius;
-	glm::vec3 color;
-};
-
-System::System(bool sun)
+System::System(int mode)
 {
 	std::random_device rd;
 	std::mt19937 e{ rd() };
 	std::uniform_real_distribution<float> dist{ 0.2f, 1.0f };
 
 	// sun types
-	_star_ starTypes[] = {
-		{dist(e),      glm::vec3{1.2f, 1.2f, 1.2f}}, // white
-		{dist(e) * 4,  glm::vec3{1.5f, 1.2f, 0}}, // orange
-		{dist(e) * 30, glm::vec3{0.5f, 1.2f, 1.5f}}, // blue
-		{dist(e) * 60, glm::vec3{1.2f, 0.f, 0}} // red
+	glm::vec3 starColors[] = {
+		glm::vec3{1.2f, 1.2f, 1.2f}, // white
+		glm::vec3{1.5f, 1.2f, 0}, // orange
+		glm::vec3{0.5f, 1.2f, 1.5f}, // blue
+		glm::vec3{1.2f, 0.f, 0} // red
 	};
 
-	if (sun)
+	if (mode == 1)
 	{
 		// saule
 		glm::vec3 rotDir = (dist(e) * 0.5f + 1.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 });
-		suns.emplace_back(new Planet(20.f, 0, 1000, starTypes[1].color, rotDir, {}, 0));
+		suns.emplace_back(new _orbit_);
+		suns[0]->planet = new Planet(20.f, 0, 1000, starColors[1], rotDir, {}, 0);
 
 
 		float padding = 20;
@@ -54,8 +48,8 @@ System::System(bool sun)
 		orbits[2]->planet = new Planet(0.127f, 5, 800, { 0.0, 1, 0.7 }, rotDir, {}, 1);
 		orbits[2]->planet->variables.speed = 1;
 		orbits[2]->planet->variables.dist = padding + 10.f;
-		orbits[2]->planet->variables.min_height = 0.54f;
-		orbits[2]->planet->variables.max_height = 0.64f;
+		orbits[2]->planet->variables.min_height = 0.49f;
+		orbits[2]->planet->variables.max_height = 0.66f;
 		orbits[2]->moons.emplace_back(new Planet(0.027f, 0, 850, { 0.4, 0.4, 0.4 }, { 0.5, -0.2, 0.3 }, {}, 3));
 		orbits[2]->planet->variables.origin = 360 * dist(e);
 
@@ -101,22 +95,103 @@ System::System(bool sun)
 		orbits[7]->planet->variables.dist = padding + 30.f;
 		orbits[7]->planet->variables.origin = 360 * dist(e);
 	}
-	else
+	else if(mode == 2)
 	{
-		//// STARS
-		//dist = std::uniform_real_distribution<float>{ 0, 5 };
+		// STARS
+		std::uniform_int_distribution<int> starAmountDist{ 1, 5 };
+		std::uniform_int_distribution<int> starColorDist{ 0, 3 };
+		std::uniform_real_distribution<float> starSizeDist{ 5, 40 };
+		std::uniform_real_distribution<float> speedDist{ 1, 10 };
 
-		//std::uniform_int_distribution<int> starType{ 0, 3 };
+		int starAmount = 1;
+		for(int i = 0; i < 5; i++)
+			starAmount += starAmountDist(e) / 5;
+		float originDegree = 360.0f / starAmount;
+		float sunSize = starSizeDist(e);
+		float sunDist = sunSize * (std::max((float)starAmount / 2, 0.6f)) * ((float)(starAmountDist(e) - 1) * 0.25f + 1);
+		float sunSpeed = speedDist(e);
+		if (starAmount == 1)
+			sunDist = 0;
+		for (int i = 0; i < starAmount; i++)
+		{
+			suns.push_back(new _orbit_);
+			suns.back()->planet = new Planet(sunSize, 0, 1000, starColors[starColorDist(e)], glm::vec3{ dist(e) - 0.1f, dist(e) - 0.1f,dist(e) - 0.1f } * 2.0f, {}, 0);
+			suns.back()->planet->variables.dist = sunDist;
+			suns.back()->planet->variables.speed = sunSpeed;
+			suns.back()->planet->variables.origin = originDegree * i;
+		}
 
-		//_star_ star = starTypes[starType(e)];
-		//suns.emplace_back(new Planet(20.f, 0, 1000, starTypes[0].color, (dist(e) * 0.5f + 1.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 }), (dist(e) * 0.5f + 2.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 }), 0));
-		//suns.back()->SetPos({ 0, 0, 0 });
-		//suns.emplace_back(new Planet(20.f, 0, 1000, starTypes[1].color, (dist(e) * 0.5f + 1.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 }), (dist(e) * 0.5f + 2.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 }), 0));
-		//suns.back()->SetPos({ 100, 0, 0 });
-		//suns.emplace_back(new Planet(20.f, 0, 1000, starTypes[2].color, (dist(e) * 0.5f + 1.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 }), (dist(e) * 0.5f + 2.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 }), 0));
-		//suns.back()->SetPos({ 200, 0, 0 });
-		//suns.emplace_back(new Planet(20.f, 0, 1000, starTypes[3].color, (dist(e) * 0.5f + 1.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 }), (dist(e) * 0.5f + 2.f) * glm::normalize(glm::vec3{ dist(e) * 2 - 1, dist(e) * 2 - 1, dist(e) * 2 - 1 }), 0));
-		//suns.back()->SetPos({ 300, 0, 0 });
+		// planets
+		float padding = sunDist * 2;
+		if (starAmount == 1)
+			padding = sunSize * 2;
+		std::uniform_int_distribution<int> planetVertexDetailDist{ 4, 7 };
+		std::uniform_int_distribution<int> planetAmountDist{ 1, 20 };
+		std::uniform_real_distribution<float> planetSizeDist{ 0.2f, sunSize / 3 };
+		std::uniform_real_distribution<float> planetDetailDist{ 100, 1000 };
+		std::uniform_real_distribution<float> colorDist{ 0, 1 };
+		speedDist = std::uniform_real_distribution<float>{ 1, 5 };
+		int planetAmount = planetAmountDist(e);
+		for (int i = 0; i < planetAmount; i++)
+		{
+			float planetSize = planetSizeDist(e);
+			int planetType = (int)planetDetailDist(e) % 2 + 1;
+
+			glm::vec3 color = glm::normalize(glm::vec3{ colorDist(e), colorDist(e), colorDist(e) }) * 2.f;
+			if (color.x > 1.1f) color.x = 1.1f;
+			if (color.y > 1.1f) color.y = 1.1f;
+			if (color.z > 1.1f) color.z = 1.1f;
+			glm::vec3 ringColor = glm::normalize(glm::vec3{colorDist(e), colorDist(e), colorDist(e)}) * 2.f;
+			if (ringColor.x > 1.1f) ringColor.x = 1.1f;
+			if (ringColor.y > 1.1f) ringColor.y = 1.1f;
+			if (ringColor.z > 1.1f) ringColor.z = 1.1f;
+			orbits.push_back(new _orbit_);
+			orbits.back()->planet = new Planet(planetSize, planetVertexDetailDist(e), planetDetailDist(e), color, glm::vec3{ dist(e) - 0.1f, dist(e) - 0.1f,dist(e) - 0.1f } *2.0f,
+				glm::vec3{ dist(e) - 0.1f, dist(e) - 0.1f,dist(e) - 0.1f } *2.0f, planetType, ringColor, (planetDetailDist(e) < 210) ? true : false);
+			padding += planetSize;
+			orbits.back()->planet->variables.dist = padding;
+			orbits.back()->planet->variables.speed = speedDist(e);
+			orbits.back()->planet->variables.origin = colorDist(e) * 360.0f;
+			color = glm::normalize(glm::vec3{ colorDist(e), colorDist(e), colorDist(e) }) * 1.5f;
+			orbits.back()->planet->variables.minColor = color;
+			color = glm::normalize(glm::vec3{ colorDist(e), colorDist(e), colorDist(e) }) * 1.5f;
+			orbits.back()->planet->variables.maxColor = color;
+
+			if (planetType == 1)
+			{
+				if (planetDetailDist(e) > 300)
+					orbits.back()->planet->variables.min_height = colorDist(e) / 3 + 0.16f;
+				if (planetDetailDist(e) > 300)
+					orbits.back()->planet->variables.max_height = colorDist(e) / 3 + 0.66f;
+			}
+			padding += planetSize + planetDetailDist(e) * 0.2f;
+
+			// moons
+			if (orbits.back()->planet->variables.hasRing)
+				continue;
+			int moonAmount = planetAmountDist(e) / 5;
+			if (orbits.back()->planet->variables.isGas)
+				moonAmount = planetAmountDist(e);
+			float moonOriginDegree = 360.0f / moonAmount;
+			float moonPadding = planetSize * 1.5f;
+			for (int j = 0; j < moonAmount; j++)
+			{
+				float moonSize = planetSize / 20 * (colorDist(e) + 0.5f);
+				color = glm::normalize(glm::vec3{ colorDist(e), colorDist(e), colorDist(e) }) * 2.f;
+				if (color.x > 1.1f) color.x = 1.1f;
+				if (color.y > 1.1f) color.y = 1.1f;
+				if (color.z > 1.1f) color.z = 1.1f;
+				orbits.back()->moons.emplace_back(new Planet(moonSize, 4, planetDetailDist(e) , color, glm::vec3{ dist(e) - 0.1f, dist(e) - 0.1f,dist(e) - 0.1f } *2.0f,
+					glm::vec3{ dist(e) - 0.1f, dist(e) - 0.1f,dist(e) - 0.1f } *2.0f, 3, {}, false));
+
+				moonPadding += moonSize;
+				orbits.back()->moons.back()->variables.dist = moonPadding;
+				orbits.back()->moons.back()->variables.speed = speedDist(e);
+				orbits.back()->moons.back()->variables.origin = colorDist(e) * 360.0f;
+				moonPadding += moonSize * 2;
+			}
+			padding += moonPadding / 3;
+		}
 	}
 	*ImGuiWindow::Variable_int("OrbitSelectedID") = -1;
 	*ImGuiWindow::Variable_int("PlanetSelectedID") = -1;
@@ -134,6 +209,8 @@ void System::Update()
 {
 	for (auto& it : orbits)
 		it->Update();
+	for (auto& it : suns)
+		it->Update();
 }
 
 void System::Draw(Shader* shader)
@@ -145,13 +222,13 @@ void System::Draw(Shader* shader)
 void System::DrawSuns(Shader* shader)
 {
 	for (auto& it : suns)
-		it->Draw(shader);
+		it->draw(shader);
 }
 
 Planet* System::Creator(Player* player)
 {
 	Planet* output = nullptr;
-	ImGui::SetNextWindowSize({384, 490});
+	ImGui::SetNextWindowSize({384, 538});
 	if(ImGui::Begin("Creator", ImGuiWindow::Variable_bool("ClosedCreator"), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize))
 	{
 		if (ImGui::BeginChild("Orbits", {180, 150}, true, ImGuiWindowFlags_AlwaysVerticalScrollbar))
@@ -332,7 +409,7 @@ Planet* System::Creator(Player* player)
 							*ImGuiWindow::Variable_int("Orbitcam") = 1 + i;
 							*ImGuiWindow::Variable_bool("Freecam") = 0;
 							*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
-							output = suns[i];
+							output = suns[i]->planet;
 							player->orbitDist = output->variables.size * 2;
 							player->orbitSpeed = player->orbitDist / 50;
 							player->orbitMin = output->variables.size * 1.1f;
@@ -363,12 +440,15 @@ Planet* System::Creator(Player* player)
 					ImGui::PopID();
 				}
 				if (ImGui::Button("Add Sun"))
-					suns.emplace_back(new Planet(20.f, 0, 1000, glm::vec3{ 1.5f, 1.2f, 0 }, { 1, 0, 0 }, {}, 0));
+				{
+					suns.emplace_back(new _orbit_);
+					suns.back()->planet = new Planet(20.f, 0, 1000, glm::vec3{ 1.5f, 1.2f, 0 }, { 1, 0, 0 }, {}, 0);
+				}
 			}
 
 			ImGui::EndChild();
 		}
-		if (ImGui::BeginChild("Settings", { 368, 300 }, true, ImGuiWindowFlags_NoScrollbar))
+		if (ImGui::BeginChild("Settings", { 368, 348 }, true, ImGuiWindowFlags_NoScrollbar))
 		{
 			if (ImGui::Checkbox("Focus", ImGuiWindow::Variable_bool("CreatorFocusPlanet")))
 			{
@@ -379,7 +459,7 @@ Planet* System::Creator(Player* player)
 						*ImGuiWindow::Variable_int("Orbitcam") = 1 + *ImGuiWindow::Variable_int("PlanetSelectedID");
 						*ImGuiWindow::Variable_bool("Freecam") = 0;
 						*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
-						output = suns[*ImGuiWindow::Variable_int("PlanetSelectedID")];
+						output = suns[*ImGuiWindow::Variable_int("PlanetSelectedID")]->planet;
 						player->orbitDist = output->variables.size * 2;
 						player->orbitSpeed = player->orbitDist / 50;
 						player->orbitMin = output->variables.size * 1.1f;
@@ -414,7 +494,7 @@ Planet* System::Creator(Player* player)
 			{
 				Planet* it;
 				if (*ImGuiWindow::Variable_int("OrbitSelectedID") == 0)
-					it = suns[*ImGuiWindow::Variable_int("PlanetSelectedID")];
+					it = suns[*ImGuiWindow::Variable_int("PlanetSelectedID")]->planet;
 				else if (*ImGuiWindow::Variable_int("PlanetSelectedID") == 0)
 					it = orbits[*ImGuiWindow::Variable_int("OrbitSelectedID") - 1]->planet;
 				else
@@ -450,10 +530,12 @@ Planet* System::Creator(Player* player)
 
 					ImGui::EndChild();
 				}
-				if (ImGui::DragFloat4("Color", glm::value_ptr(it->variables.color), 0.01f, 0.001f));
-				if (ImGui::DragFloat3("Rotation", glm::value_ptr(it->variables.planetRot), 0.01f, 0.001f));
-				if (ImGui::DragFloat4("Ring Color", glm::value_ptr(it->variables.colorRing), 0.01f, 0.001f));
-				if (ImGui::DragFloat3("Ring Rotation", glm::value_ptr(it->variables.ringRot), 0.01f, 0.001f));
+				if (ImGui::DragFloat3("Rotation", glm::value_ptr(it->variables.planetRot), 0.01f, 0));
+				if (ImGui::DragFloat3("Ring Rotation", glm::value_ptr(it->variables.ringRot), 0.01f, 0));
+				if (ImGui::DragFloat4("Color", glm::value_ptr(it->variables.color), 0.01f, 0));
+				if (ImGui::DragFloat4("Ring Color", glm::value_ptr(it->variables.colorRing), 0.01f, 0));
+				if (ImGui::DragFloat3("Max Height Color", glm::value_ptr(it->variables.maxColor), 0.01f, 0));
+				if (ImGui::DragFloat3("Min Height Color", glm::value_ptr(it->variables.minColor), 0.01f, 0));
 			}
 			ImGui::EndChild();
 		}

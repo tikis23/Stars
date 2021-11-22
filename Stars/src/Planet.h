@@ -18,6 +18,8 @@ struct PlanetVariables
 	bool hasRing = false;
 	float max_height = 1;
 	float min_height = 0;
+	glm::vec3 maxColor = { 1, 1, 1 };
+	glm::vec3 minColor = { 0, 0, 1 };
 	float size = 1;
 	float mult = 1000;
 	float origin = 0;

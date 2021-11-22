@@ -43,7 +43,7 @@ class SaveManager
 public:
 	static void Save(const char* path, System* system);
 	static System* Load(const char* path);
-	static void Menu(System** system);
+	static void Menu(System** system, Planet** orbitPlanet);
 private:
 	//struct browserState
 	//{

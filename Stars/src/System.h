@@ -9,7 +9,7 @@
 class System
 {
 public:
-	System(bool sun = false);
+	System(int mode = 0);
 	~System();
 
 	void Draw(Shader* shader);
@@ -44,6 +44,10 @@ public:
 			for (auto& it : moons)
 				it->Draw(shader);
 		};
+		_orbit_(Planet* planet = nullptr)
+		{
+			this->planet = planet;
+		};
 		~_orbit_()
 		{
 			if (planet != nullptr)
@@ -54,5 +58,5 @@ public:
 	};
 public:
 	std::vector<_orbit_*>orbits;
-	std::vector<Planet*>suns;
+	std::vector<_orbit_*>suns;
 };

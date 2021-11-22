@@ -36,9 +36,6 @@ void Program::loop()
     *ImGuiWindow::Variable_int("LOD") = 6;
 
     // create window
-    //glfwWindowHint(GLFW_SAMPLES, 8);
-    //glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
-    //Window window(1920, 1080, "Stars", WINDOW_FULLSCREEN);
     Window window(1280, 900, "Stars", WINDOW_WINDOWED);
     window.MakeCurrent();
     window.SetVSync(0);
@@ -82,7 +79,7 @@ void Program::loop()
     unsigned int rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)

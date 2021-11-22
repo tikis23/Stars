@@ -13,7 +13,7 @@ Planet::Planet(float i_size, int i_detail, float i_mult, glm::vec3 i_color, glm:
     variables.size = i_size;
     variables.planetRot = i_planetRot;
     variables.ringRot   = i_atmoRot;
-
+    variables.ringSize = 3 * i_size;
     if (i_type == 0)
     {
         variables.isSun = true;
@@ -216,6 +216,8 @@ void Planet::Draw(Shader* shader)
     shader->setUniform1i("isRing", false);
     shader->setUniform1i("u_isPlanet", variables.isPlanet);
     shader->setUniform4f("u_color", variables.color.x, variables.color.y, variables.color.z, variables.color.w);
+    shader->setUniform3f("u_minColor", variables.minColor.x, variables.minColor.y, variables.minColor.z);
+    shader->setUniform3f("u_maxColor", variables.maxColor.x, variables.maxColor.y, variables.maxColor.z);
     shader->setUniformMatrix4fv("model", glm::value_ptr(model));
     drawData[0]->draw();
     if (variables.hasRing)

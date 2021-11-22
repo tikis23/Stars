@@ -5,7 +5,7 @@
 class Camera
 {
 public:
-	Camera(glm::vec3 position = glm::vec3{ 0, 0, -5 }, glm::vec3 front = glm::vec3{ 0, 0, 1 }, glm::vec3 up = glm::vec3{0, 1, 0}, float pNear = 0.0001f, float pFar = 10000.0f, float fov = 90.0f);
+	Camera(glm::vec3 position = glm::vec3{ 0, 0, -5 }, glm::vec3 front = glm::vec3{ 0, 0, 1 }, glm::vec3 up = glm::vec3{0, 1, 0}, float pNear = 0.0001f, float pFar = 10000000.0f, float fov = 90.0f);
 	~Camera();
 	void Update(float aspectRatio, bool orbit, glm::vec3 orbitPos = { 0, 0, 0 });
 public:

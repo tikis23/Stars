@@ -32,7 +32,7 @@ Renderer::Renderer(Window* window)
 	player->camera->SetPosition({ 0, 0, -50 });
 	skybox = new Skybox;
 
-	system = new System{ true };
+	system = new System{ 1 };
 
 	int width, height;
 	window->GetSize(&width, &height);
@@ -61,7 +61,7 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 	if (ImGui::Begin("Main"))
 	{
 		ImGui::BeginMenuBar();
-		SaveManager::Menu(&system);
+		SaveManager::Menu(&system, &orbitPlanet);
 		if (ImGui::BeginMenu("Settings"))
 		{
 			if (ImGui::BeginMenu("Time Speed"))
@@ -141,7 +141,7 @@ void Renderer::Draw(Shader* fboDrawShader, unsigned int fbo, unsigned int fbovao
 							*ImGuiWindow::Variable_int("Orbitcam") = currentItemIndex;
 							*ImGuiWindow::Variable_bool("Freecam") = 0;
 							*ImGuiWindow::Variable_int("SmoothMove") = Global::maxFrames;
-							orbitPlanet = system->suns[suns];
+							orbitPlanet = system->suns[suns]->planet;
 							player->orbitDist = orbitPlanet->variables.size * 2;
 							player->orbitSpeed = player->orbitDist / 50;
 							player->orbitMin = orbitPlanet->variables.size * 1.1f;

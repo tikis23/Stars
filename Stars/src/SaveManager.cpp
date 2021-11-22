@@ -90,24 +90,26 @@ void SaveManager::Save(const char* path, System* system)
             // sun
             output << "\n\tsun:\n\t[";
             
-            output << "\n\t\tint detail: "      << it->variables.detail;
-            output << "\n\t\tbool isSun: "      << it->variables.isSun;
-            output << "\n\t\tbool isPlanet: "   << it->variables.isPlanet;
-            output << "\n\t\tbool isGas: "      << it->variables.isGas;
-            output << "\n\t\tbool isMoon: "     << it->variables.isMoon;
-            output << "\n\t\tbool hasRing: "    << it->variables.hasRing;
-            output << "\n\t\tfloat maxHeight: " << it->variables.max_height;
-            output << "\n\t\tfloat minHeight: " << it->variables.min_height;
-            output << "\n\t\tfloat size: "      << it->variables.size;
-            output << "\n\t\tfloat mult: "      << it->variables.mult;
-            output << "\n\t\tfloat origin: "    << it->variables.origin;
-            output << "\n\t\tfloat dist: "      << it->variables.dist;
-            output << "\n\t\tfloat speed: "     << it->variables.speed;
-            output << "\n\t\tfloat ringSize: "  << it->variables.ringSize;
-            output << "\n\t\tvec3 planetRot: "  << outputVec(it->variables.planetRot);
-            output << "\n\t\tvec3 ringRot: "    << outputVec(it->variables.ringRot);
-            output << "\n\t\tvec4 planetCol: "  << outputVec(it->variables.color);
-            output << "\n\t\tvec4 ringCol: "    << outputVec(it->variables.colorRing);
+            output << "\n\t\tint detail: "      << it->planet->variables.detail;
+            output << "\n\t\tbool isSun: "      << it->planet->variables.isSun;
+            output << "\n\t\tbool isPlanet: "   << it->planet->variables.isPlanet;
+            output << "\n\t\tbool isGas: "      << it->planet->variables.isGas;
+            output << "\n\t\tbool isMoon: "     << it->planet->variables.isMoon;
+            output << "\n\t\tbool hasRing: "    << it->planet->variables.hasRing;
+            output << "\n\t\tfloat maxHeight: " << it->planet->variables.max_height;
+            output << "\n\t\tfloat minHeight: " << it->planet->variables.min_height;
+            output << "\n\t\tvec3 maxHeightColor: " << outputVec(it->planet->variables.maxColor);
+            output << "\n\t\tvec3 minHeightColor: " << outputVec(it->planet->variables.minColor);
+            output << "\n\t\tfloat size: "      << it->planet->variables.size;
+            output << "\n\t\tfloat mult: "      << it->planet->variables.mult;
+            output << "\n\t\tfloat origin: "    << it->planet->variables.origin;
+            output << "\n\t\tfloat dist: "      << it->planet->variables.dist;
+            output << "\n\t\tfloat speed: "     << it->planet->variables.speed;
+            output << "\n\t\tfloat ringSize: "  << it->planet->variables.ringSize;
+            output << "\n\t\tvec3 planetRot: "  << outputVec(it->planet->variables.planetRot);
+            output << "\n\t\tvec3 ringRot: "    << outputVec(it->planet->variables.ringRot);
+            output << "\n\t\tvec4 planetCol: "  << outputVec(it->planet->variables.color);
+            output << "\n\t\tvec4 ringCol: "    << outputVec(it->planet->variables.colorRing);
 
             output << "\n\t]";
         }
@@ -133,6 +135,8 @@ void SaveManager::Save(const char* path, System* system)
                 output << "\n\t\t\tbool hasRing: " << it->variables.hasRing;
                 output << "\n\t\t\tfloat maxHeight: " << it->variables.max_height;
                 output << "\n\t\t\tfloat minHeight: " << it->variables.min_height;
+                output << "\n\t\tvec3 maxHeightColor: " << outputVec(it->variables.maxColor);
+                output << "\n\t\tvec3 minHeightColor: " << outputVec(it->variables.minColor);
                 output << "\n\t\t\tfloat size: " << it->variables.size;
                 output << "\n\t\t\tfloat mult: " << it->variables.mult;
                 output << "\n\t\t\tfloat origin: " << it->variables.origin;
@@ -159,6 +163,8 @@ void SaveManager::Save(const char* path, System* system)
                 output << "\n\t\t\tbool hasRing: " << it->variables.hasRing;
                 output << "\n\t\t\tfloat maxHeight: " << it->variables.max_height;
                 output << "\n\t\t\tfloat minHeight: " << it->variables.min_height;
+                output << "\n\t\tvec3 maxHeightColor: " << outputVec(it->variables.maxColor);
+                output << "\n\t\tvec3 minHeightColor: " << outputVec(it->variables.minColor);
                 output << "\n\t\t\tfloat size: " << it->variables.size;
                 output << "\n\t\t\tfloat mult: " << it->variables.mult;
                 output << "\n\t\t\tfloat origin: " << it->variables.origin;
@@ -211,6 +217,8 @@ System* SaveManager::Load(const char* path)
                             input >> s >> s >> variables.hasRing;
                             input >> s >> s >> variables.max_height;
                             input >> s >> s >> variables.min_height;
+                            input >> s >> s >> variables.maxColor.x >> variables.maxColor.y >> variables.maxColor.z;
+                            input >> s >> s >> variables.minColor.x >> variables.minColor.y >> variables.minColor.z;
                             input >> s >> s >> variables.size;
                             input >> s >> s >> variables.mult;
                             input >> s >> s >> variables.origin;
@@ -223,7 +231,10 @@ System* SaveManager::Load(const char* path)
                             input >> s >> s >> variables.colorRing.x >> variables.colorRing.y >> variables.colorRing.z >> variables.colorRing.w;
                             input >> s;
                             if (s == "]")
-                                system->suns.emplace_back(new Planet(variables));
+                            {
+                                system->suns.emplace_back(new System::_orbit_);
+                                system->suns.back()->planet = new Planet(variables);
+                            }
                             else return nullptr;
                         }
                         else return nullptr;
@@ -271,6 +282,8 @@ System* SaveManager::Load(const char* path)
                                         input >> s >> s >> variables.hasRing;
                                         input >> s >> s >> variables.max_height;
                                         input >> s >> s >> variables.min_height;
+                                        input >> s >> s >> variables.maxColor.x >> variables.maxColor.y >> variables.maxColor.z;
+                                        input >> s >> s >> variables.minColor.x >> variables.minColor.y >> variables.minColor.z;
                                         input >> s >> s >> variables.size;
                                         input >> s >> s >> variables.mult;
                                         input >> s >> s >> variables.origin;
@@ -302,6 +315,8 @@ System* SaveManager::Load(const char* path)
                                         input >> s >> s >> variables.hasRing;
                                         input >> s >> s >> variables.max_height;
                                         input >> s >> s >> variables.min_height;
+                                        input >> s >> s >> variables.maxColor.x >> variables.maxColor.y >> variables.maxColor.z;
+                                        input >> s >> s >> variables.minColor.x >> variables.minColor.y >> variables.minColor.z;
                                         input >> s >> s >> variables.size;
                                         input >> s >> s >> variables.mult;
                                         input >> s >> s >> variables.origin;
@@ -336,11 +351,14 @@ System* SaveManager::Load(const char* path)
     return system;
 }
 
-void SaveManager::Menu(System** system)
+void SaveManager::Menu(System** system, Planet** orbitPlanet)
 {
     System* temp = FileBrowser(*system);
     if (temp != nullptr)
     {
+        *orbitPlanet = nullptr;
+        *ImGuiWindow::Variable_int("PlanetSelectedID") = -1;
+        *ImGuiWindow::Variable_int("OrbitSelectedID") = -1;
         delete* system;
         *system = temp;
     }
@@ -350,9 +368,9 @@ void SaveManager::Menu(System** system)
             *ImGuiWindow::Variable_bool("Load") = true;
         if (ImGui::BeginMenu("New..", "Ctrl+N"))
         {
-            if (ImGui::MenuItem("Generated (TODO)")) { delete *system; *system = new System{ false }; }
-            if (ImGui::MenuItem("Empty")) { delete *system; *system = new System{ false }; }
-            if (ImGui::MenuItem("Predefined")) { delete *system; *system = new System{ true }; }
+            if (ImGui::MenuItem("Generated")) { delete *system; *system = new System{ 2 }; }
+            if (ImGui::MenuItem("Empty")) { delete *system; *system = new System{ 0 }; }
+            if (ImGui::MenuItem("Predefined")) { delete *system; *system = new System{ 1 }; }
             ImGui::EndMenu();
         }
         if (system != nullptr && ImGui::MenuItem("Save..", "Ctrl+S")) 

@@ -14,7 +14,8 @@ uniform bool u_isPlanet;
 uniform bool u_isSun;
 uniform float u_minHeight;
 uniform float u_maxHeight;
-
+uniform vec3 u_minColor;
+uniform vec3 u_maxColor;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -26,16 +27,12 @@ void main()
     vec3 o_color = v_color * u_color.xyz;
     if(u_color.w > 0.9 && u_isPlanet == true)
     {
-        if(v_color.x < u_minHeight)
-        {  
-            o_color = u_color.xyz * vec3(u_color.z + v_color.x, u_color.x + v_color.x, u_color.y + v_color.x) * 0.5;
-        }
-        else if(v_color.x > u_maxHeight)
-        {  
-            o_color = u_color.xyz * (2+v_color.x);
-        }
-        else
-            o_color = v_color * u_color.xyz * 0.8;
+		float maxWeight = 0.1;
+		float minWeight = 0.1;
+
+		o_color = v_color * mix(u_color.xyz, u_maxColor, smoothstep(u_maxHeight - maxWeight, u_maxHeight, v_color.x));
+		if(v_color.x < u_minHeight)
+			o_color = mix(o_color, u_minColor, smoothstep(u_minHeight + minWeight, u_minHeight, v_color.x));
     }
 
 	if(!u_isSun)
